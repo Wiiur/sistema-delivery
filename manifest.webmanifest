@@ -1,0 +1,33 @@
+{
+  "name": "Dropa Delivery",
+  "short_name": "Dropa",
+  "description": "Peça seu delivery favorito com rapidez e praticidade.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#18181B",
+  "background_color": "#FAFAFA",
+  "icons": [
+    {
+      "src": "/Dropa-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/Dropa-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Dropa-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["food", "shopping", "business"],
+  "prefer_related_applications": false
+}
