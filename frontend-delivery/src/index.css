@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: var(--primary);
+  --color-tx-primary: var(--tx-primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  
+  --color-bg-main: var(--bg-main);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-input: var(--bg-input);
+  
+  --color-tx-main: var(--tx-main);
+  --color-tx-muted: var(--tx-muted);
+  --color-stroke: var(--stroke);
+
+  --font-theme: var(--font-theme);
+  --radius-theme: var(--radius-theme);
+  --radius-card: var(--radius-card);
+  --shadow-theme: var(--shadow-theme);
+}
+
+:root {
+  /* Variáveis Padrão (serão substituídas pela loja digital dinamicamente) */
+  --primary: #000000;
+  --tx-primary: #FFFFFF;
+  --secondary: #333333;
+  --accent: #F59E0B;
+  --bg-main: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --bg-input: #F4F4F5;
+  --tx-main: #09090B;
+  --tx-muted: #71717A;
+  --stroke: #E4E4E7;
+
+  --font-theme: "Inter", system-ui, sans-serif;
+  --radius-theme: 8px;
+  --radius-card: 12px;
+  --shadow-theme: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 🌟 SUAVIDADE GLOBAL */
+html {
+  scroll-behavior: smooth; /* Navegação fluida ao clicar em links internos */
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-main);
+  color: var(--tx-main);
+  font-family: var(--font-theme);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Animação suave e automática sempre que a loja trocar de cor ou tema Escuro/Claro */
+  transition: background-color 0.5s ease, color 0.5s ease; 
+}
+
+/* 🌟 SCROLLBAR INVISÍVEL NO CELULAR, MINIMALISTA NO PC */
+.custom-scrollbar::-webkit-scrollbar { 
+  width: 4px; 
+  height: 4px; 
+}
+.custom-scrollbar::-webkit-scrollbar-track { 
+  background: transparent; 
+}
+.custom-scrollbar::-webkit-scrollbar-thumb { 
+  background-color: var(--stroke); 
+  border-radius: 10px; 
+  transition: background-color 0.3s ease;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { 
+  background-color: var(--tx-muted); 
+}
+
+/* ==========================================
+   ⚡ UTILITÁRIOS EXCLUSIVOS DO DROPA
+   ========================================== */
+
+/* A assinatura oficial e elegante para usar no rodapé (Footer) */
+.dropa-signature {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--tx-muted);
+  font-weight: 800;
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: opacity 0.3s ease, color 0.3s ease;
+}
+
+.dropa-signature:hover {
+  opacity: 1;
+  color: var(--primary);
+}
+
+/* Efeito de Vidro (Glassmorphism) para usar em Menus Mobile e Cabeçalhos fixos */
+.glass-effect {
+  background: color-mix(in srgb, var(--bg-surface) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--stroke);
+}
+
+/* ⚡ Shimmer keyframe para skeletons */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 🌈 Animação suave para valores dinâmicos (contadores, totais) */
+@keyframes pop-in {
+  0% { transform: scale(0.92); opacity: 0; }
+  60% { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.pop-in { animation: pop-in 0.28s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* 🎯 Foco visível consistente (acessibilidade) */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-theme);
+}
+
+/* Redução de motion para usuários que preferem */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

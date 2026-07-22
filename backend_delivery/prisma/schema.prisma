@@ -1,0 +1,433 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// USUÁRIOS E CLIENTES
+// ==========================================
+model Usuario {
+  id              Int       @id @default(autoincrement())
+  nome            String
+  cpf             String    @unique
+  whatsapp        String
+  email           String?   @unique
+  senha           String
+  tipo_usuario    String    @default("cliente")
+  criado_em       DateTime  @default(now())
+
+  endereco_padrao String?
+  lat_padrao      Decimal?  @db.Decimal(10, 8)
+  lon_padrao      Decimal?  @db.Decimal(10, 8)
+
+  pedidos         Pedido[]
+
+  @@map("usuarios")
+}
+
+// ==========================================
+// CATÁLOGO E ESTOQUE
+// ==========================================
+model Categoria {
+  id       Int                @id @default(autoincrement())
+  nome     String
+  ordem    Int                @default(0) 
+  produtos ProdutoCategoria[] 
+
+  @@map("categorias")
+}
+
+model ProdutoCategoria {
+  produto_id   Int
+  categoria_id Int
+  
+  produto   Produto   @relation(fields: [produto_id], references: [id], onDelete: Cascade)
+  categoria Categoria @relation(fields: [categoria_id], references: [id], onDelete: Cascade)
+
+  @@id([produto_id, categoria_id])
+  @@map("produto_categorias")
+}
+
+model Produto {
+  id              Int                @id @default(autoincrement())
+  nome            String
+  descricao       String?
+  preco_venda     Decimal            @db.Decimal(10, 2)
+  preco_custo     Decimal?           @db.Decimal(10, 2)
+  imagem_url      String?
+  estoque_atual   Int                @default(0)
+  em_destaque     Boolean            @default(false)
+  disponibilidade String             @default("ambos")  
+  complementos    String?            // Mantido temporariamente para não quebrar a versão atual
+
+  categorias      ProdutoCategoria[] 
+  categoria_temp  String             @default("Geral")
+
+  // 👉 NOVO: Motor de Ordenação de Alta Performance (Drag and Drop)
+  ordem_visual    Int                @default(0) 
+
+  lotes_estoque   LoteEstoque[]
+  itens_pedido    ItemPedido[]
+  
+  // Relacionamento com as Etapas de Montagem (V2.0)
+  etapas          ProdutoEtapa[]
+
+  @@index([ordem_visual])
+  @@index([disponibilidade])
+  @@map("produtos")
+}
+
+// ==========================================
+// COMPLEMENTOS V2.0 (Templates e Etapas)
+// ==========================================
+
+// 1. A Regra do Produto (Ex: "Escolha até 2 Sabores")
+model ProdutoEtapa {
+  id         Int      @id @default(autoincrement())
+  produto_id Int
+  nome       String   // Ex: "Escolha seus Sabores", "Adicionais Pagos"
+  min_total  Int      @default(0) // Quantos o cliente é obrigado a escolher
+  max_total  Int      // O limite MÁXIMO somando todos os grupos dentro desta etapa
+  ordem      Int      @default(0) // Para ordenar na tela
+
+  produto    Produto  @relation(fields: [produto_id], references: [id], onDelete: Cascade)
+  grupos     EtapaGrupo[] // Os grupos de itens que aparecem nesta etapa
+
+  @@map("produto_etapas")
+}
+
+// 2. O Template Global (Ex: "Chocolates", "Frutas", "Caldas")
+model GrupoComplemento {
+  id         Int      @id @default(autoincrement())
+  nome       String   // Nome do template
+  ativo      Boolean  @default(true) // Desativou aqui? Some de TODOS os produtos
+
+  itens      ItemComplemento[]
+  etapas     EtapaGrupo[] // Mostra em quais produtos/etapas este template está sendo usado
+
+  @@map("grupos_complemento")
+}
+
+// 3. A Tabela Ponte (Liga o Template Global à Regra do Produto)
+model EtapaGrupo {
+  etapa_id   Int
+  grupo_id   Int
+
+  etapa      ProdutoEtapa     @relation(fields: [etapa_id], references: [id], onDelete: Cascade)
+  grupo      GrupoComplemento @relation(fields: [grupo_id], references: [id], onDelete: Cascade)
+
+  @@id([etapa_id, grupo_id]) // Garante que não repita o mesmo grupo na mesma etapa
+  @@map("etapa_grupos")
+}
+
+// 4. Os Itens Globais (Ex: "Morango", "Nutella")
+model ItemComplemento {
+  id         Int      @id @default(autoincrement())
+  grupo_id   Int
+  nome       String   
+  preco      Decimal  @default(0.00) @db.Decimal(10, 2)
+  ativo      Boolean  @default(true) // Acabou no estoque? Desativa aqui.
+
+  grupo      GrupoComplemento @relation(fields: [grupo_id], references: [id], onDelete: Cascade)
+
+  @@map("itens_complemento")
+}
+
+// ==========================================
+// RESTANTE DO BANCO
+// ==========================================
+
+model LoteEstoque {
+  id           Int      @id @default(autoincrement())
+  quantidade   Int
+  tipo_unidade String   @default("Unidade")
+  descricao    String?  
+  criado_em    DateTime @default(now())
+
+  produto_id   Int
+  produto      Produto  @relation(fields: [produto_id], references: [id], onDelete: Cascade)
+
+  @@map("lotes_estoque")
+}
+
+model Pedido {
+  id               Int          @id @default(autoincrement())
+  total            Decimal      @db.Decimal(10, 2)
+  status           String       @default("recebido") 
+  tipo_pedido      String       @default("delivery") 
+  mesa             String?      
+  metodo_pagamento String
+  observacoes      String?
+  criado_em        DateTime     @default(now())
+
+  usuario_id       Int
+  usuario          Usuario      @relation(fields: [usuario_id], references: [id])
+
+  cliente_nome     String?
+  cliente_cpf      String?
+  cliente_telefone String?
+  
+  cliente_endereco String?
+  cliente_lat      Decimal?     @db.Decimal(10, 8)
+  cliente_lon      Decimal?     @db.Decimal(10, 8)
+
+  motoboy_id       Int?
+  taxa_entrega     Decimal?     @db.Decimal(10, 2)
+  distancia_km     Decimal?     @db.Decimal(10, 2)
+  valor_motoboy    Decimal?     @db.Decimal(10, 2)
+  motoboy          Motoboy?     @relation(fields: [motoboy_id], references: [id])
+
+  criado_por       String?
+  finalizado_por   String?
+
+  itens            ItemPedido[]
+  pagamento        Pagamento?
+
+  @@index([criado_em])
+  @@index([status])
+  @@index([cliente_cpf])
+  @@index([tipo_pedido, status])
+  @@map("pedidos")
+}
+
+model ItemPedido {
+  id             Int      @id @default(autoincrement())
+  quantidade     Int
+  preco_unitario Decimal  @db.Decimal(10, 2)
+  obs            String?  // Complementos textuais e observações
+  
+  pedido_id      Int
+  pedido         Pedido   @relation(fields: [pedido_id], references: [id], onDelete: Cascade)
+  
+  produto_id     Int      
+  produto        Produto  @relation(fields: [produto_id], references: [id])
+
+  @@map("itens_pedido")
+}
+
+model Motoboy {
+  id       Int      @id @default(autoincrement())
+  nome     String
+  placa    String   
+  telefone String?
+  comissao Decimal  @db.Decimal(5, 2) 
+  pedidos  Pedido[]
+  
+  @@map("motoboys")
+}
+
+// ==========================================
+// CONFIGURAÇÕES GLOBAIS DA LOJA
+// ==========================================
+model LojaConfig {
+  id               Int      @id @default(1)
+  endereco         String   @default("")
+  taxa_base        Decimal  @db.Decimal(10, 2) @default(5.00)
+  taxa_km          Decimal  @db.Decimal(10, 2) @default(1.50)
+  tempo_km_minutos Int      @default(4)
+
+  nome_loja        String   @default("Minha Loja")
+  
+  logo_url         String?  
+  capa_url         String?  
+  tema_base        String   @default("fast_food") 
+  cor_primaria     String   @default("#FF6B00")
+  cor_secundaria   String   @default("#FFF3E0")
+  cor_fundo        String   @default("#F9FAFB")
+  modo_escuro_auto Boolean  @default(true) 
+
+  lat_loja         Decimal? @db.Decimal(10, 8) @default(-22.778842)
+  lon_loja         Decimal? @db.Decimal(10, 8) @default(-47.294411)
+  raio_maximo      Decimal  @db.Decimal(10, 2) @default(15.00)
+  chovendo         Boolean  @default(false)
+
+  nota_loja        String?  @default("5.0")
+  avaliacoes_loja  String?  @default("100+")
+  hora_abre        String?  @default("14:00")
+  hora_fecha       String?  @default("23:00")
+  status_manual    String?  @default("auto") 
+
+  ordem_categorias String? @db.Text
+
+  @@map("loja_config")
+}
+
+// ==========================================
+// FINANCEIRO E EQUIPE
+// ==========================================
+model FechamentoCaixa {
+  id              Int      @id @default(autoincrement())
+  data            DateTime @default(now())
+  total_sistema   Decimal  @db.Decimal(10, 2) 
+  total_informado Decimal  @db.Decimal(10, 2) 
+  diferenca       Decimal  @db.Decimal(10, 2) 
+  pix_total       Decimal  @db.Decimal(10, 2)
+  dinheiro_total  Decimal  @db.Decimal(10, 2)
+  cartao_total    Decimal  @db.Decimal(10, 2)
+  observacoes     String?
+  
+  @@map("fechamentos_caixa")
+}
+
+model Funcionario {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  cargo     String   @default("funcionario")
+  pin       String   @unique
+  ativo     Boolean  @default(true)
+  criado_em DateTime @default(now())
+
+  @@map("funcionarios")
+}
+
+model CotacaoFornecedor {
+  id            Int      @id @default(autoincrement())
+  ingrediente   String   
+  nome_empresa  String   
+  preco         Decimal  @db.Decimal(10, 2)
+  telefone      String   @default("")
+  datas_pedidos String?  @default("[]")
+  
+  @@map("cotacoes_fornecedor")
+}
+
+model StoreTheme {
+  id               Int      @id @default(autoincrement())
+  store_id         Int      @unique 
+  theme_name       String   @default("fast_food")
+  mode             String   @default("system") 
+  primary_override String?  
+  custom_overrides Json?    
+  updated_at       DateTime @updatedAt
+
+  @@map("store_themes")
+}
+
+// ==========================================
+// CUPONS E MARKETING
+// ==========================================
+model Cupom {
+  id                 Int       @id @default(autoincrement())
+  tenant_id          Int       // Relacionamento com a Loja
+  codigo             String    // Ex: PRIMEIRACOMPRA, ACAI10
+  
+  tipo_desconto      String    // 'PORCENTAGEM' ou 'FIXO'
+  valor_desconto     Decimal   @db.Decimal(10, 2)
+  valor_min_pedido   Decimal?  @db.Decimal(10, 2)
+  desconto_maximo    Decimal?  @db.Decimal(10, 2) 
+  
+  data_inicio        DateTime  @default(now())
+  data_expiracao     DateTime?
+  limite_uso_total   Int?      
+  usos_atuais        Int       @default(0)
+  limite_por_cpf     Int       @default(1)
+  
+  apenas_primeira_compra Boolean @default(false)
+  tipos_pedido_validos   String? 
+  dias_semana_validos    String? 
+  horario_inicio         String? 
+  horario_fim            String? 
+  
+  ativo              Boolean   @default(true)
+  criado_em          DateTime  @default(now())
+
+  usos               UsoCupom[]
+
+  @@unique([tenant_id, codigo]) 
+  @@index([codigo])
+  @@index([ativo])
+  @@map("cupons")
+}
+
+model UsoCupom {
+  id             Int      @id @default(autoincrement())
+  cupom_id       Int
+  tenant_id      Int
+  pedido_id      Int      @unique 
+  cliente_id     Int?
+  cpf_cliente    String?
+  ip_usuario     String?
+  valor_poupado  Decimal  @db.Decimal(10, 2)
+  usado_em       DateTime @default(now())
+
+  cupom          Cupom    @relation(fields: [cupom_id], references: [id])
+
+  @@map("cupons_usos")
+}
+
+// ==========================================
+// 👉 PAGAMENTOS (Sprint 4 — Mercado Pago Pix)
+// ==========================================
+model Pagamento {
+  id                 Int       @id @default(autoincrement())
+  pedido_id          Int       @unique
+  pedido             Pedido    @relation(fields: [pedido_id], references: [id], onDelete: Cascade)
+
+  provider           String    @default("mercado_pago")
+  provider_order_id  String?   @unique
+  external_reference String    @unique
+  status             String    @default("aguardando_pagamento") // 'aguardando_pagamento' | 'pago' | 'expirado' | 'cancelado'
+  moeda              String    @default("BRL")
+  valor              Decimal   @db.Decimal(10, 2)
+
+  copia_e_cola       String?   @db.Text
+  qr_code_base64     String?   @db.Text
+  ticket_url         String?
+  expira_em          DateTime?
+  mp_status          String?
+  mp_status_detail   String?
+  ultimo_webhook     Json?
+  verificado_em      DateTime?
+  criado_em          DateTime  @default(now())
+  atualizado_em      DateTime  @updatedAt
+
+  @@index([status])
+  @@index([expira_em])
+  @@map("pagamentos")
+}
+
+// ==========================================
+// 👉 FIDELIDADE (Sprint 4 — Dropa Points)
+// ==========================================
+model FidelidadeConta {
+  id            Int       @id @default(autoincrement())
+  cliente_cpf   String    @unique
+  cliente_nome  String?
+  saldo_pontos  Int       @default(0)
+  total_gasto   Decimal   @db.Decimal(10, 2) @default(0)
+  criado_em     DateTime  @default(now())
+  atualizado_em DateTime  @updatedAt
+
+  transacoes    FidelidadeTransacao[]
+
+  @@map("fidelidade_contas")
+}
+
+model FidelidadeTransacao {
+  id             Int       @id @default(autoincrement())
+  conta_id       Int
+  conta          FidelidadeConta @relation(fields: [conta_id], references: [id], onDelete: Cascade)
+
+  tipo           String    // 'ganho' | 'resgate' | 'ajuste' | 'expiracao'
+  pontos         Int       // positivo (ganho/ajuste+) ou negativo (resgate/expiracao)
+  descricao      String?
+  pedido_id      Int?      // referência opcional
+  criado_em      DateTime  @default(now())
+
+  @@index([conta_id, criado_em])
+  @@map("fidelidade_transacoes")
+}
+model CardapioSnapshot {
+  id            Int      @id @default(autoincrement())
+  tenant_id     Int      @default(1) // ID da Loja para garantir multi-tenant seguro
+  nome_versao   String   // Ex: "Pré Organização Automática", "Ordem Original"
+  snapshot_json String   @db.Text // Guarda o array com [{produto_id: 1, ordem: 10000}]
+  criado_em     DateTime @default(now())
+
+  @@map("cardapio_snapshots")
+}
