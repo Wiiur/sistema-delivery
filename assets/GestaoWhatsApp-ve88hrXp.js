@@ -1,4 +1,4 @@
-import{o as e,r as t,t as n}from"./jsx-runtime-DmWTtIqA.js";import{t as r}from"./bot-BgEng6pn.js";import{i,n as a,r as o,t as s}from"./zap-d7DSZ75P.js";import{t as c}from"./save-DwhGPYga.js";import{E as l,x as u,y as d}from"./index-C6GxY-kC.js";var f=e(t(),1),p=n();function m(){let[e,t]=(0,f.useState)(!1),[n,m]=(0,f.useState)(!1),[h,g]=(0,f.useState)(`Olá! Sou o assistente virtual da D'Varano Sorvetes 🍦
+import{o as e,r as t,t as n}from"./jsx-runtime-DmWTtIqA.js";import{t as r}from"./bot-BgEng6pn.js";import{i,n as a,r as o,t as s}from"./zap-d7DSZ75P.js";import{t as c}from"./save-DwhGPYga.js";import{D as l,S as u,b as d}from"./index-C3dHwG_8.js";var f=e(t(),1),p=n();function m(){let[e,t]=(0,f.useState)(!1),[n,m]=(0,f.useState)(!1),[h,g]=(0,f.useState)(`Olá! Sou o assistente virtual da D'Varano Sorvetes 🍦
 
 Para ver nosso cardápio ou fazer um pedido, acesse: seu-site.com
 
