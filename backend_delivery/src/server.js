@@ -285,7 +285,7 @@ app.get('/produtos', async (req, res) => {
     });
     return res.status(200).json(produtos);
   } catch (error) {
-    console.error('[Erro] Buscar Produtos');
+    console.error('[Erro] Buscar Produtos', error);
     return res.status(500).json({ erro: 'Erro ao buscar produtos.' });
   }
 });

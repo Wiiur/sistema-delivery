@@ -14,10 +14,10 @@ datasource db {
 model Usuario {
   id              Int       @id @default(autoincrement())
   nome            String
-  cpf             String    @unique
-  whatsapp        String
+  cpf             String?    @unique
+  whatsapp        String?
   email           String?   @unique
-  senha           String
+  senha           String?
   tipo_usuario    String    @default("cliente")
   criado_em       DateTime  @default(now())
 
