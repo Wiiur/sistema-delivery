@@ -140,6 +140,7 @@ app.post('/usuarios', async (req, res) => {
 
 // Login GERENTE (com lazy bcrypt migration)
 app.post('/login-gerente', loginLimiter, validate(loginGerenteSchema), async (req, res) => {
+  console.log('🚀 [ROTA ACIONADA] Tentativa de login Gerente:', req.body.email); // <-- Dedo-duro de entrada
   try {
     const { email, senha } = req.body;
     const usuario = await prisma.usuario.findUnique({ where: { email } });
@@ -169,13 +170,14 @@ app.post('/login-gerente', loginLimiter, validate(loginGerenteSchema), async (re
       user: { id: usuario.id, nome: usuario.nome, cargo: 'gerente', role: 'gerente' }
     });
   } catch (error) {
-    console.error('[Erro] Login Gerente:', error.message);
+    console.error('🚨 ERRO FATAL NO LOGIN GERENTE:', error); // <-- Dedo-duro do erro
     return res.status(500).json({ erro: 'Erro interno ao tentar logar.' });
   }
 });
 
 // Login FUNCIONÁRIO via PIN — nunca mais expõe a lista de PINs no frontend
 app.post('/login-pin', loginLimiter, validate(loginPinSchema), async (req, res) => {
+  console.log('🚀 [ROTA ACIONADA] Tentativa de login PIN'); // <-- Dedo-duro de entrada
   try {
     const pinLimpo = String(req.body.pin).trim().toUpperCase();
     const func = await prisma.funcionario.findFirst({
@@ -189,7 +191,7 @@ app.post('/login-pin', loginLimiter, validate(loginPinSchema), async (req, res) 
       user: { id: func.id, nome: func.nome, cargo: func.cargo || 'funcionario', role: 'funcionario', ativo: true }
     });
   } catch (error) {
-    console.error('[Erro] Login PIN');
+    console.error('🚨 ERRO FATAL NO LOGIN PIN:', error); // <-- Dedo-duro do erro
     return res.status(500).json({ erro: 'Erro interno ao validar PIN.' });
   }
 });
